@@ -1,6 +1,8 @@
 stat 433 HW1
 ================
 
+URL of Github: <https://github.com/tzhang479/STAT-433-HW1/tree/main>
+
 ``` r
 library(dplyr)
 ```
@@ -82,10 +84,9 @@ that these flights might be cancelled.
     of minutes since midnight.
 
 ``` r
-flights <- mutate(flights,
-                  dep_mins_since_midnight = dep_time %/% 100 * 60 + dep_time %% 100,
-                  sched_dep_mins_since_midnight = sched_dep_time %/% 100 * 60 + sched_dep_time %% 100)
-flights
+flights %>% 
+  mutate(dep_mins_since_midnight = dep_time %/% 100 * 60 +   dep_time %% 100,
+         sched_dep_mins_since_midnight = sched_dep_time %/% 100 * 60 + sched_dep_time %% 100)
 ```
 
     ## # A tibble: 336,776 × 21
@@ -106,6 +107,27 @@ flights
     ## #   air_time <dbl>, distance <dbl>, hour <dbl>, minute <dbl>, time_hour <dttm>,
     ## #   dep_mins_since_midnight <dbl>, sched_dep_mins_since_midnight <dbl>
 
+``` r
+flights
+```
+
+    ## # A tibble: 336,776 × 19
+    ##     year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+    ##    <int> <int> <int>    <int>          <int>     <dbl>    <int>          <int>
+    ##  1  2013     1     1      517            515         2      830            819
+    ##  2  2013     1     1      533            529         4      850            830
+    ##  3  2013     1     1      542            540         2      923            850
+    ##  4  2013     1     1      544            545        -1     1004           1022
+    ##  5  2013     1     1      554            600        -6      812            837
+    ##  6  2013     1     1      554            558        -4      740            728
+    ##  7  2013     1     1      555            600        -5      913            854
+    ##  8  2013     1     1      557            600        -3      709            723
+    ##  9  2013     1     1      557            600        -3      838            846
+    ## 10  2013     1     1      558            600        -2      753            745
+    ## # … with 336,766 more rows, and 11 more variables: arr_delay <dbl>,
+    ## #   carrier <chr>, flight <int>, tailnum <chr>, origin <chr>, dest <chr>,
+    ## #   air_time <dbl>, distance <dbl>, hour <dbl>, minute <dbl>, time_hour <dttm>
+
 1.  Look at the number of canceled flights per day. Is there a pattern?
     Is the proportion of canceled flights related to the average delay?
     Use multiple dyplr operations, all on one line, concluding with
@@ -113,13 +135,14 @@ flights
 
 ``` r
 flights %>% 
-  mutate(cancelled_flights = is.na(flights$dep_time)) %>% 
+  mutate(cancelled_flights = is.na(flights$arr_delay)) %>% 
+  mutate(date = (month-1) * 30 + day) %>%
   group_by(year, month, day) %>% 
   summarise(cancelled_flights_num = sum(cancelled_flights),
-                   day) %>% 
-  ggplot(mapping = aes(x = day, y = cancelled_flights_num)) +
-  geom_point() +
-  geom_smooth(method = 'lm', se = FALSE)
+                   date) %>%
+  ggplot(aes(x = date, y = cancelled_flights_num)) +
+  geom_point()+
+  geom_smooth(method = 'lm')
 ```
 
     ## `summarise()` has grouped output by 'year', 'month', 'day'. You can override using the `.groups` argument.`geom_smooth()` using formula 'y ~ x'
@@ -131,7 +154,7 @@ flights %>%
   group_by(month, day) %>%
     summarise(average_delay = mean(dep_delay, na.rm = TRUE),
               canceled_flights_proportion = sum(is.na(dep_time))/sum(n())) %>%
-  ggplot(mapping = aes(x = average_delay, y = canceled_flights_proportion)) +
+  ggplot(aes(x = average_delay, y = canceled_flights_proportion)) +
   geom_point() +
   geom_smooth(method = 'lm', se = FALSE)
 ```
@@ -145,7 +168,7 @@ flights %>%
   group_by(month, day) %>%
     summarise(average_delay = mean(arr_delay, na.rm = TRUE),
               canceled_flights_proportion = sum(is.na(arr_time))/sum(n())) %>%
-  ggplot(mapping = aes(x = average_delay, y = canceled_flights_proportion)) +
+  ggplot(aes(x = average_delay, y = canceled_flights_proportion)) +
   geom_point() +
   geom_smooth(method = 'lm', se = FALSE)
 ```
@@ -154,6 +177,8 @@ flights %>%
 
 ![](README_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->
 
-There is a pattern. As we can see in the graph, there is a positive
-relationship between average delay and the proportion of canceled
-flights.
+There is a pattern. As we can see in the first graph, there is a
+negative relationship for the number of canceled in a year (there are
+360 days since I make 30 days per month.) As we can see in the graph,
+there is a positive relationship between average delay and the
+proportion of canceled flights.
